@@ -213,11 +213,24 @@ void loop()  //#################################################³³############
     denteAzul.println("   1 = alarme 1");
     denteAzul.println("   2 = recarga");
     denteAzul.println("   3 = mostra os horarios"); 
+    
+    switch (AA) {
+     case  '0' : acertaRelogio();
+      pause;
+    case  '1' : acertaAlarme1();
+      pausa;
+    case  '2' : acertaRecarga();
+      pausa;
+    }
+
+
+
+    /*
     if (AA == "0"){acertaRelogio();}  //acerta relogio
     if (AA == "1"){acertaAlarme1();}  //acerta alarme 1
     if (AA == "2"){acertaRecarga();}  //acerta horario de recarga da caixa
     if (AA == "3"){mostraHorarios();}  //mostra os horarios programados
-  } //recebeu entrada via bluetooth
+  } *///recebeu entrada via bluetooth
 //========================================================== ROTINAS DOS ALARMES 
 
   //  recarga dos medicamentos ***************************************************
@@ -313,10 +326,12 @@ void loop()  //#################################################³³############
 
   //==================================================== FIM DAS ROTINAS DOS ALARMES
 
+  //-----------------------------------------------------Mostrar Horarios no display     
   if (digitalRead(6) && digitalRead(7)){
     mostraHorarios();
   }
-
+  //-------------------------------------------------FIM Mostrar Horarios no display     
+  
 //===================================== ROTINAS DAS ABERTURAS DAS PORTAS HABILITADAS
 
 //------------------------------------------------- atividades  SE porta1 habilitada
