@@ -60,7 +60,6 @@ String HORA;              //coleta horario do RTC
   String AA ="";
 
 //----------------------------------------------------------------------lcd display
-#include <Wire.h>                 //carrega bibliotecas do lcd display
 #include <LiquidCrystal_I2C.h>    //hardware, pinos A4 e A5; verificar inversao
 LiquidCrystal_I2C lcd(0x27,16,2); //"27" ou "3F" (pesquisar)
 
@@ -68,19 +67,19 @@ LiquidCrystal_I2C lcd(0x27,16,2); //"27" ou "3F" (pesquisar)
 #include <Servo.h>   //carrega biblioteca  para o servo 
 Servo sv1;           //servo sg90 - pino 5, para porta1
 Servo sv2;           //servo sg90 - pino 6, porta2
-byte aberto1=68;     //angulos de abertura dos servos (EXPERIMENTAL)
-byte fechado1=20;   //
-byte aberto2=42;    //
-byte fechado2=98;  //
+byte aberto1=20;     //angulos de abertura dos servos (EXPERIMENTAL)
+byte fechado1=70;   //
+byte aberto2=55;    //
+byte fechado2=20;  //
 
 //--------------------------------------------- botoes, sensores, alarmes e portas
 byte porta1aberta = 0;        //porta1 aberta
 byte porta2aberta = 0;        //porta2 aberta
 byte tEspera1     = 0;        //tempo de espera de 30 minutos da porta1
 byte tEspera2     = 0;        //tempo de espera de 30 minutos da porta2
-String ALARM1     = "10:00";  //alarme da porta 1
-String ALARM2     = "22:00";  //atarme da porta 2
-String RECARGA    = "08:00";  //habilita recarga. Alterar com insercao de ALARM1
+String ALARM1     = "";  //alarme da porta 1
+String ALARM2     = "";  //atarme da porta 2
+String RECARGA    = "";  //habilita recarga. Alterar com insercao de ALARM1
 byte proxAlarm    = 1;        //sinalizador do proximo alarme (1 ou 2)
 
 //------------------------------------------------------------------------- outros
@@ -201,6 +200,7 @@ void loop()  //#################################################³³############
   if (denteAzul.available() > 0)      //comunica com bluetooth apenas SE tem entrada
   {
     char menu;
+    while(!denteAzul.available() > 0){true;}
     while(denteAzul.available() > 0)
     {
       menu = denteAzul.read(); //caracter em 'menu'
@@ -208,29 +208,17 @@ void loop()  //#################################################³³############
     }
 // temos AA com a string total dos caracteres digitados (futuras possibilidades)
 // temos o ultimo (ou unico) caracter da entrada em 'menu'
+    if (AA == "0"){acertaRelogio();}  //acerta relogio
+    if (AA == "1"){acertaAlarme1();}  //acerta alarme 1
+    if (AA == "2"){acertaRecarga();}  //acerta horario de recarga da caixa
+    if (AA == "3"){mostraHorarios();}  //mostra os horarios programados
     denteAzul.println("AJUSTES:");
     denteAzul.println("   0 = relogio");
     denteAzul.println("   1 = alarme 1");
     denteAzul.println("   2 = recarga");
     denteAzul.println("   3 = mostra os horarios"); 
     
-    switch (AA) {
-     case  '0' : acertaRelogio();
-      pause;
-    case  '1' : acertaAlarme1();
-      pausa;
-    case  '2' : acertaRecarga();
-      pausa;
-    }
-
-
-
-    /*
-    if (AA == "0"){acertaRelogio();}  //acerta relogio
-    if (AA == "1"){acertaAlarme1();}  //acerta alarme 1
-    if (AA == "2"){acertaRecarga();}  //acerta horario de recarga da caixa
-    if (AA == "3"){mostraHorarios();}  //mostra os horarios programados
-  } *///recebeu entrada via bluetooth
+  } //recebeu entrada via bluetooth
 //========================================================== ROTINAS DOS ALARMES 
 
   //  recarga dos medicamentos ***************************************************
@@ -326,12 +314,10 @@ void loop()  //#################################################³³############
 
   //==================================================== FIM DAS ROTINAS DOS ALARMES
 
-  //-----------------------------------------------------Mostrar Horarios no display     
   if (digitalRead(6) && digitalRead(7)){
     mostraHorarios();
   }
-  //-------------------------------------------------FIM Mostrar Horarios no display     
-  
+
 //===================================== ROTINAS DAS ABERTURAS DAS PORTAS HABILITADAS
 
 //------------------------------------------------- atividades  SE porta1 habilitada
@@ -615,14 +601,13 @@ void acertaAlarme1()
   //denteAzul.println("Horario dos Alarmes em HHMM ");
   pegaMenu();                  //volta com AA (HR:MR),  HR&MR e hr&mr (valores)
   ALARM1 = AA;
+  denteAzul.println(ALARM1);
   //............................................................ calcula alarme 2
   /*hr = hr + 12;
   if(hr > 24){hr = hr - 24;}
   intTOstring(); 
                    //vai com hr&mr, volta com string HR&MR e mr&hr
   ALARM2 = HR + ":" + MR;*/
-  mostraHorarios();
-  proxAlarm    = 1;
 }
 
 
@@ -631,7 +616,7 @@ void acertaRecarga()
   //denteAzul.print("Horario de recarga em HHMM -> ");
   pegaMenu();             //volta com AA (HR:MR),  HR&MR e hr&mr (valores)
   RECARGA = HR + ":" + MR;
-  mostraHorarios();
+  denteAzul.println(RECARGA);
 }
 
 
