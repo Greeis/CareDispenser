@@ -345,7 +345,10 @@ void loop()  //#################################################³³############
         {  
             sensor1();
             noTone(12);                                             //desliga sirene
+            sv1.write(fechado1);
+            digitalWrite(2,LOW);
             Serial.println("retirou 1");
+            delay(60000);
         }
     }
     if(tEspera1 == 0)
@@ -372,8 +375,8 @@ void loop()  //#################################################³³############
   //..............................................................................
         if (digitalRead(7)) //----------SE botao2 acionado no intervalo habilitado
         {
-            sv1.write(aberto1);                                    //abre a porta2
-            porta1aberta = 1;                             //sinaliza porta2 aberta
+            sv2.write(aberto2);                                    //abre a porta2
+            porta2aberta = 1;                             //sinaliza porta2 aberta
             Serial.println("abriu a porta2");
             delay(600);                      //tempo de resposta para soltar botao
         }  //------- FIM da verificacao SE botao2 acionado no intervalo habilitado
@@ -381,8 +384,11 @@ void loop()  //#################################################³³############
         if(porta2aberta == 1 && digitalRead(9))     //SE porta2 aberta e coletado
         {  
             sensor2();
-            noTone(12);                                           //desliga sirene
+            noTone(12);                                             //desliga sirene
+            sv2.write(fechado2);
+            digitalWrite(3,LOW);
             Serial.println("retirou 2");
+            delay(60000);
         }
     }
     if(tEspera2 == 0)
