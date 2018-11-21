@@ -70,7 +70,11 @@ String RECARGA       = "08:00";                               //horario da recar
 byte porta1aberta = 0;        //porta1 aberta
 byte porta2aberta = 0;        //porta2 aberta
 
-byte tEspera1 = 0;        //tempo de espera de 30 minutos da porta1
+long tEspera1 = 60000;        //tempo de espera de 30 minutos da porta1
+long tempoInicial = 0;
+
+
+
 byte tEspera2 = 0;        //tempo de espera de 30 minutos da porta2
 byte tEsperaR = 0;
 int unsigned hr;
@@ -153,6 +157,32 @@ void setup(){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //##################################### LOOP ######################################### 
 void loop ()
 {
@@ -176,82 +206,180 @@ void loop ()
   }
 //------------------------------------------------------------------------- Bluetooth
   if (bluetooth.available() > 0){  //==================== SE tem entrada do Bluetooth
-    String AA = "";
-    byte i;
-    while(bluetooth.available() > 0)
-      { AA = AA+(char)bluetooth.read(); }              //soma caracteres em "AA"
-    Serial.print("Menu: " + AA);
-    i = AA.length();
-    if(i != 1)         //2 ou mais caracteres mostram o menu de opcoes
-    {         
-      bluetooth.println("AJUSTES:");
-      bluetooth.println("   0 = Relogio");
-      bluetooth.println("   1 = Alarme 1");
-      bluetooth.println("   2 = Recarga");
-    }
-    if (AA == "0"){acertaRelogio();}  //acerta relogio
-    if (AA == "1"){acertaAlarme1();}  //acerta alarme 1
-    if (AA == "2"){acertaRecarga();}  //acerta horario de recarga da caixa
+    PegaMenu();
   } //================================================== FIM da entrada via bluetooth
 
                 //################# ALARMES ##################// 
 
 //----------------------------------------------Quando o horario do alarme é atingido
-  
-  if(HORA == ALARM1 && tEspera1 == 0)    //------------------------ Sinaliza alarme 1
+  long tempoAtual = millis();
+  if(HORA == ALARM1 && FLAG[4] == 'n')//--------------------------- Sinaliza alarme 1
   {
+    FLAG[4] = 's';                                     //habilita abertura da porta 1
     digitalWrite(2,HIGH);                                               //acende LED1
     tone(12,600);                                                       //liga sirene
-    Serial.println("Horario do alarme 1");
-    tEspera1 = 1;                                   //habilita contagem de 30 minutos
-    
+    Serial.println("Alarme 1: Chegou a hora de tomar o remedio!");
     lcd.clear();
     lcd.print("Chegou a hora de");
     lcd.setCursor(0,1);
     lcd.print("tomar o remedio!");
-    delay (3000);
+    delay (1000);
+    lcd.clear();
   }
-//-------------------------------------------------- atividades  SE porta1 habilitada
-  if(tEspera1 != 0)     
-  { //------------------------------------------------------------- Contagem do tempo
-    AA = HORA;
-    Serial.println(HORA);
-    stringTOint();
-    Serial.println(mr);
-    tEspera1 = mr + 30;                                   //incia contagem 30 minutos
-    if(tEspera1 > 59)
-    {
-      tEspera1 = tEspera1 - 59;
-      if(tEspera1 == 0)
-      {tEspera1 = 1;}
-    }
-  //------------------------------------------------------------ Atividades do Botão1 
-  if (digitalRead(6)) //-------------------SE botao1 acionado no intervalo habilitado
+  
+  if(HORA != ALARM1 && FLAG[4] == 's')   //--------- Cancela alarme 1 apos UM minuto
   {
-    sv1.write(aberto1);                                               //abre a porta1
-    porta1aberta = 1;                                        //sinaliza porta1 aberta
-    Serial.println("abriu a porta1");
-    delay(600);                                 //tempo de resposta para soltar botao
-   }  //----------------FIM da verificacao SE botao1 acionado no intervalo habilitado
-   
-   if(porta1aberta == 1 && digitalRead(8))              //SE porta1 aberta e coletado
-   {
+    FLAG[4] = 'n';                                    //cancela habilitacao da porta
+    digitalWrite(2,LOW);                                                 //apaga LED1
     noTone(12);                                                      //desliga sirene
-    sv1.write(fechado1);
-    digitalWrite(2,LOW);
-    Serial.println("retirou 1");
-    delay(60000);
-   }
-    
-   if(tEspera1 == 0)
-    { 
-      sv1.write(fechado1);                                             //fecha porta1
-      digitalWrite(2,LOW);                                             //desliga LED1
-      noTone(12);                                                    //desliga sirene
-    }//--------------------------------------FIM das atividades  SE porta1 habilitada
+    Serial.println("Medicacao NAO coletada");                       //comunica evento
+    FLAG[3] = '2';
   }
-}
-//#################################### FIM LOOP ###################################### 
+
+  if(HORA == ALARM2 && FLAG[5] == 'n')//-------------------------- Sinaliza alarme 2
+  {
+    FLAG[5] = 's';                                    //habilita abertura da porta 2
+    digitalWrite(3,HIGH);                                              //acende LED2
+    tone(12,400);                                                      //liga sirene
+    Serial.println("Alarme 2: Chegou a hora de tomar o remedio!");
+    lcd.clear();
+    lcd.print("Chegou a hora de");
+    lcd.setCursor(0,1);
+    lcd.print("tomar o remedio!");
+    delay (1000);
+    lcd.clear();
+  }
+
+  if(HORA != ALARM2 && FLAG[5] == 's')  //---------------------- cancela alarme 2 apos UM minuto
+  {
+    FLAG[5] = 'n';                                    //cancela habilitacao da porta
+    digitalWrite(3,LOW);                                                 //apaga LED2
+    noTone(12);                                                      //desliga sirene
+    Serial.println("Medicacao NAO coletada");                       //comunica evento
+    FLAG[3] = '1';
+  }
+
+  if(HORA == RECARGA && FLAG[2] == 'n')//-------------------------- Sinaliza Recarga
+  {
+    FLAG[2] = 's';                                    //habilita abertura da porta 2
+    sv1.write(aberto1);                                              //abre a porta1
+    delay(100);
+    sv2.write(aberto2);                                              //abre a porta2
+    digitalWrite(2,HIGH);                                              //acende LED1
+    digitalWrite(3,HIGH);                                              //acende LED2
+    tone(12,600);                                                      //liga sirene
+    Serial.println("Chegou a hora da recarga");
+    lcd.clear();
+    lcd.print("Chegou a hora da");
+    lcd.setCursor(0,1);
+    lcd.print("recarga diaria! ");
+    delay (1000);
+    lcd.clear();
+    lcd.print("Recarga diaria  ");
+    lcd.setCursor(0,1);
+    lcd.print("Caixa 2  -> Fim ");
+    delay (3000);    
+   }
+  
+  if(HORA != RECARGA && FLAG[2] == 's') //----------------------------- Cancela recarga
+  {
+    FLAG[2] = 'n';                                    //cancela sinalizacao de recarga
+    noTone(12);                                                   //desliga sirene
+    sv1.write(fechado1);                                            //fecha porta1
+    delay(100); 
+    sv2.write(fechado2);                                            //fecha porta2
+    digitalWrite(2,LOW);                                              //apaga LED1
+    digitalWrite(3,LOW);                                              //apaga LED2
+    Serial.println("Não recarregou!");   
+  }
+  //================================================= SE os horarios estao habilitados:
+  
+  if(FLAG[4] == 's')//------- ------------------------------------ Atividades do Botão1 
+  {
+    if(digitalRead(6))                                             //SE botao1 acionado
+    {
+      sv1.write(aberto1);                                               //abre a porta1
+    }
+    if(digitalRead(8))                                             //SE sensor1 ativado
+    {
+      digitalWrite(2,LOW);                                                 //apaga LED1
+      noTone(12);                                                      //desliga sirene
+      Serial.println("Medicacao coletada");                           //comunica evento
+      delay(3000);                                          
+      sv1.write(fechado1);                                               //fecha porta1
+      FLAG[3] = '2';
+    }
+  }
+
+  if(FLAG[5] == 's') //------------------------------------------- Atividades do Botão2
+  {
+    if(digitalRead(7))                                             //SE botao2 acionado
+    {
+      sv2.write(aberto2);                                               //abre a porta2
+    }
+    if(digitalRead(9))                                             //SE sensor2 ativado
+    {
+      digitalWrite(3,LOW);                                                 //apaga LED2
+      noTone(12);                                                      //desliga sirene
+      Serial.println("Medicacao coletada");                           //comunica evento
+      delay(3000);                                           
+      sv2.write(fechado2);                                               //fecha porta2
+      FLAG[3] = '1';
+    }
+  }
+
+  if(FLAG[2] == 's') //------------------------------------------ Atividades da Recarga
+  {
+    if(digitalRead(9))                                             //SE botao2 acionado
+    {
+      noTone(12);                                                   //desliga sirene
+      delay(3000); 
+      sv1.write(fechado1);                                            //fecha porta1
+      delay(100);
+      sv2.write(fechado2);                                            //fecha porta2
+      digitalWrite(2,LOW);                                              //apaga LED1
+      digitalWrite(3,LOW);                                              //apaga LED2
+      Serial.print("Recarregou!!");          
+    }
+  }
+  
+}//#################################### FIM LOOP ###################################### 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -311,7 +439,7 @@ void acertaAlarme1()
   while(!bluetooth.available() > 0){true;}             //espera entrada via bluetooth 
   while(bluetooth.available() > 0)
   { h1 = h1+(char)bluetooth.read();}                        //soma caracteres em "h1"
-  Serial.println("   Alarme 1 " + h1);
+  Serial.println("   Alarme 1: " + h1);
   byte i=h1.length();  //conta os caracteres
   if (i==5)                                              //aceita apenas 5 caracteres
   {
@@ -387,10 +515,41 @@ void acertaRecarga()
   }
 }
 
-
-void stringTOint()
+void CalcularTempoEspera()
 { 
   String MR="";                            //minutos
   MR=MR+AA.charAt(3)+AA.charAt(4);  //caracter 3 e 4 (MM)
   mr=MR.toInt();
+  if(tEspera1 != 0)     
+    { //contagem do tempo ..........................................................
+        tEspera1 = mr + 30;                              //incia contagem 30 minutos
+        if(tEspera1 > 59)
+        {
+            tEspera1 = tEspera1 - 59;
+            if(tEspera1 == 0)
+            {
+                tEspera1 = 1;
+            }
+        }
+    }
+}
+
+void PegaMenu(){
+  String menu = "";
+  byte i;
+  while(bluetooth.available() > 0)
+  { menu = menu+(char)bluetooth.read(); }              //soma caracteres em "AA"
+  
+  Serial.print("Menu: " + menu);
+  i = menu.length();
+  if(i != 1)         //2 ou mais caracteres mostram o menu de opcoes
+  {
+    bluetooth.println("AJUSTES:");
+    bluetooth.println("   0 = Relogio");
+    bluetooth.println("   1 = Alarme 1");
+    bluetooth.println("   2 = Recarga");
+  }
+  if (menu == "0"){acertaRelogio();}  //acerta relogio
+  if (menu == "1"){acertaAlarme1();}  //acerta alarme 1
+  if (menu == "2"){acertaRecarga();}  //acerta horario de recarga da caixa 
 }
